@@ -3,80 +3,206 @@
 <head>
     <title>Plants vs Zombies Multiplayer</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
+        * {
             margin: 0;
-            padding: 20px;
-            background-color: #f0f0f0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
         }
 
-        #gameBoard {
-            border: 2px solid black;
-            background: #90EE90;
-            display: block;
-            margin: 0 auto;
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
 
         .lobby {
-            max-width: 600px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
             margin: 20px auto;
-            padding: 20px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            background: white;
-            text-align: center;
         }
 
-        .hidden {
-            display: none;
+        .lobby h2 {
+            color: #4CAF50;
+            margin-bottom: 20px;
+            font-size: 24px;
+            text-transform: uppercase;
         }
 
-        button {
-            padding: 10px 20px;
-            margin: 10px;
-            border: none;
-            border-radius: 4px;
-            background-color: #4CAF50;
-            color: white;
+        .game-ui {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .game-container {
+            position: relative;
+            margin: 20px auto;
+        }
+
+        #gameBoard {
+            background: #90EE90;
+            border: 4px solid #4CAF50;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
             cursor: pointer;
-            font-size: 16px;
         }
 
-        button:hover {
-            background-color: #45a049;
+        .status-bar {
+            width: 100%;
+            max-width: 800px;
+            display: flex;
+            justify-content: space-between;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            margin-bottom: 10px;
         }
 
-        input {
-            padding: 10px;
-            margin: 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 16px;
+        .sun-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 24px;
+            color: #FFD700;
         }
 
-        #gameUI {
-            text-align: center;
-        }
-
-        .status {
-            margin: 10px;
-            padding: 10px;
-            background-color: white;
-            border-radius: 4px;
-            display: inline-block;
+        .sun-icon {
+            width: 30px;
+            height: 30px;
+            background: #FFD700;
+            border-radius: 50%;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
         }
 
         .controls {
+            width: 100%;
+            max-width: 800px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .plant-selector {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 15px;
+        }
+
+        .plant-option {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .plant-option.selected {
+            background: rgba(76, 175, 80, 0.3);
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(76, 175, 80, 0.3);
+        }
+
+        .plant-option:hover {
+            transform: translateY(-2px);
+        }
+
+        .plant-cost {
+            color: #FFD700;
+            font-weight: bold;
+        }
+
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
             margin: 10px;
-            padding: 10px;
-            background-color: white;
-            border-radius: 4px;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+        }
+
+        button:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        input {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid #4CAF50;
+            padding: 12px 20px;
+            border-radius: 25px;
+            color: #fff;
+            font-size: 16px;
+            width: 200px;
+            margin: 10px;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #FFD700;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            background: rgba(255, 0, 0, 0.9);
+            color: white;
+            border-radius: 8px;
+            animation: slideIn 0.5s ease-out;
+            z-index: 1000;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
         }
     </style>
 </head>
 <body>
 <div id="lobby" class="lobby">
-    <h2>PvZ Multiplayer Lobby</h2>
+    <h2>Plants vs Zombies Multiplayer</h2>
     <button id="createGame">Create New Game</button>
     <div>
         <input id="gameId" placeholder="Enter Game ID">
@@ -84,12 +210,19 @@
     </div>
 </div>
 
-<div id="gameUI" class="hidden">
-    <div class="status">
-        Sun: <span id="sunCounter">50</span>
-        Selected: <span id="selected">None</span>
+<div id="gameUI" class="game-ui hidden">
+    <div class="status-bar">
+        <div class="sun-container">
+            <div class="sun-icon"></div>
+            <span id="sunCounter">50</span>
+        </div>
+        <div id="selected">Selected: None</div>
     </div>
-    <canvas id="gameBoard" width="800" height="600"></canvas>
+
+    <div class="game-container">
+        <canvas id="gameBoard" width="800" height="600"></canvas>
+    </div>
+
     <div class="controls" id="controls"></div>
 </div>
 
@@ -114,20 +247,24 @@
         sun: 50,
         selectedPlant: null,
         isPlayerPlants: false,
-        gameId: null
+        gameId: null,
+        lastMouseX: 0,
+        lastMouseY: 0
     };
 
-    // UI Elements
+    // Initialize socket connection
+    const socket = io('http://localhost:3000'); // Change to your server URL
+
+    // Canvas Setup
+    let canvas, ctx;
+
+    // DOM Elements
     const lobbyDiv = document.getElementById('lobby');
     const gameUI = document.getElementById('gameUI');
     const sunCounter = document.getElementById('sunCounter');
     const selectedDisplay = document.getElementById('selected');
-    let canvas, ctx;
 
-    // Connect to server
-    const socket = io('https://untitled13.onrender.com'); // Change this to your Render URL in production
-
-    // Game Creation and Joining
+    // Event Listeners
     document.getElementById('createGame').addEventListener('click', () => {
         socket.emit('createGame');
     });
@@ -136,14 +273,17 @@
         const gameId = document.getElementById('gameId').value;
         if (gameId) {
             socket.emit('joinGame', gameId);
+        } else {
+            showNotification('Please enter a game ID!');
         }
     });
 
+    // Socket Events
     socket.on('gameCreated', (data) => {
         gameState.gameId = data.gameId;
         gameState.isPlayerPlants = true;
         document.getElementById('gameId').value = data.gameId;
-        alert(`Game created! Share this ID: ${data.gameId}`);
+        showNotification(`Game created! Share this ID: ${data.gameId}`);
     });
 
     socket.on('gameJoined', (data) => {
@@ -159,42 +299,73 @@
     socket.on('gameUpdate', (newState) => {
         gameState.plants = newState.plants;
         gameState.zombies = newState.zombies;
+        if (gameState.sun !== newState.sun) {
+            updateSunCounter(newState.sun);
+        }
         gameState.sun = newState.sun;
-        sunCounter.textContent = gameState.sun;
     });
 
     socket.on('gameEnded', (data) => {
-        alert(`Game Over! ${data.winner} won!`);
-        location.reload();
+        showNotification(`Game Over! ${data.winner.toUpperCase()} Win!`);
+        setTimeout(() => {
+            location.reload();
+        }, 3000);
     });
 
     socket.on('error', (data) => {
-        alert(data.message);
+        showNotification(data.message);
     });
 
+    // Game Functions
     function startGame() {
         lobbyDiv.classList.add('hidden');
         gameUI.classList.remove('hidden');
         canvas = document.getElementById('gameBoard');
         ctx = canvas.getContext('2d');
+        setupControls();
         setupGameListeners();
-        gameLoop();
+        requestAnimationFrame(gameLoop);
+    }
+
+    function setupControls() {
+        const controls = document.getElementById('controls');
+        if (gameState.isPlayerPlants) {
+            controls.innerHTML = `
+                    <div class="plant-selector">
+                        <div class="plant-option" data-plant="SUNFLOWER">
+                            <div>Sunflower</div>
+                            <div class="plant-cost">50 sun</div>
+                        </div>
+                        <div class="plant-option" data-plant="PEASHOOTER">
+                            <div>Peashooter</div>
+                            <div class="plant-cost">100 sun</div>
+                        </div>
+                    </div>
+                `;
+
+            document.querySelectorAll('.plant-option').forEach(option => {
+                option.addEventListener('click', () => {
+                    document.querySelectorAll('.plant-option').forEach(opt =>
+                        opt.classList.remove('selected'));
+                    option.classList.add('selected');
+                    gameState.selectedPlant = option.dataset.plant;
+                    selectedDisplay.textContent = `Selected: ${PLANT_TYPES[gameState.selectedPlant].name}`;
+                });
+            });
+        } else {
+            controls.innerHTML = `
+                    <div>Click on the rightmost column to place zombies</div>
+                `;
+        }
     }
 
     function setupGameListeners() {
         canvas.addEventListener('click', handleClick);
-
-        if (gameState.isPlayerPlants) {
-            document.addEventListener('keydown', (e) => {
-                if (e.key === '1') {
-                    gameState.selectedPlant = 'SUNFLOWER';
-                    selectedDisplay.textContent = 'Sunflower';
-                } else if (e.key === '2') {
-                    gameState.selectedPlant = 'PEASHOOTER';
-                    selectedDisplay.textContent = 'Peashooter';
-                }
-            });
-        }
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            gameState.lastMouseX = e.clientX - rect.left;
+            gameState.lastMouseY = e.clientY - rect.top;
+        });
     }
 
     function handleClick(e) {
@@ -202,36 +373,61 @@
         const x = Math.floor((e.clientX - rect.left) / GRID_SIZE);
         const y = Math.floor((e.clientY - rect.top) / GRID_SIZE);
 
-        if (gameState.isPlayerPlants && gameState.selectedPlant) {
-            const plantType = PLANT_TYPES[gameState.selectedPlant];
-            if (gameState.sun >= plantType.cost) {
-                socket.emit('placePlant', {
-                    type: gameState.selectedPlant,
-                    x: x,
-                    y: y,
-                    gameId: gameState.gameId
-                });
+        if (x < 0 || x >= COLS || y < 0 || y >= ROWS) return;
+
+        if (gameState.isPlayerPlants) {
+            if (!gameState.selectedPlant) {
+                showNotification('Select a plant first!');
+                return;
             }
-        } else if (!gameState.isPlayerPlants) {
-            if (x === COLS - 1) { // Can only place zombies in rightmost column
-                socket.emit('placeZombie', {
-                    type: 'BASIC',
-                    x: x,
-                    y: y,
-                    gameId: gameState.gameId
-                });
+
+            if (!isPlantPlaceable(x, y)) {
+                showNotification('Cannot place plant here!');
+                return;
             }
+
+            if (gameState.sun < PLANT_TYPES[gameState.selectedPlant].cost) {
+                showNotification('Not enough sun!');
+                return;
+            }
+
+            socket.emit('placePlant', {
+                type: gameState.selectedPlant,
+                x: x,
+                y: y,
+                gameId: gameState.gameId
+            });
+        } else {
+            if (x !== COLS - 1) {
+                showNotification('Zombies can only be placed in the rightmost column!');
+                return;
+            }
+
+            socket.emit('placeZombie', {
+                type: 'BASIC',
+                x: x,
+                y: y,
+                gameId: gameState.gameId
+            });
         }
     }
 
+    function isPlantPlaceable(x, y) {
+        return !gameState.plants.some(plant =>
+            Math.floor(plant.x) === Math.floor(x) &&
+            Math.floor(plant.y) === Math.floor(y)
+        );
+    }
+
     function gameLoop() {
-        requestAnimationFrame(gameLoop);
         drawGame();
+        requestAnimationFrame(gameLoop);
     }
 
     function drawGame() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         drawGrid();
+        drawPlantPlacementPreview();
         drawPlants();
         drawZombies();
     }
@@ -252,6 +448,20 @@
             ctx.moveTo(0, i * GRID_SIZE);
             ctx.lineTo(COLS * GRID_SIZE, i * GRID_SIZE);
             ctx.stroke();
+        }
+    }
+
+    function drawPlantPlacementPreview() {
+        if (!gameState.isPlayerPlants || !gameState.selectedPlant) return;
+
+        const x = Math.floor(gameState.lastMouseX / GRID_SIZE);
+        const y = Math.floor(gameState.lastMouseY / GRID_SIZE);
+
+        if (x >= 0 && x < COLS && y >= 0 && y < ROWS) {
+            ctx.globalAlpha = 0.5;
+            ctx.fillStyle = isPlantPlaceable(x, y) ? '#4CAF50' : '#FF0000';
+            ctx.fillRect(x * GRID_SIZE, y * GRID_SIZE, GRID_SIZE, GRID_SIZE);
+            ctx.globalAlpha = 1;
         }
     }
 
@@ -305,22 +515,33 @@
         // Draw health bar
         drawHealthBar(x, y, health);
 
+        // Draw stem and leaves
+        ctx.strokeStyle = '#228B22';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(x + GRID_SIZE/2, y + GRID_SIZE * 0.7);
+        ctx.lineTo(x + GRID_SIZE/2, y + GRID_SIZE * 0.5);
+        ctx.stroke();
+
+        // Draw leaves
+        ctx.fillStyle = '#32CD32';
+        ctx.beginPath();
+        ctx.ellipse(x + GRID_SIZE * 0.3, y + GRID_SIZE * 0.6, 12, 6, Math.PI / 4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(x + GRID_SIZE * 0.7, y + GRID_SIZE * 0.6, 12, 6, -Math.PI / 4, 0, Math.PI * 2);
+        ctx.fill();
+
         // Draw head
         ctx.fillStyle = '#228B22';
         ctx.beginPath();
-        ctx.arc(x + GRID_SIZE/2, y + GRID_SIZE/2, GRID_SIZE/3, 0, Math.PI * 2);
+        ctx.arc(x + GRID_SIZE/2, y + GRID_SIZE * 0.4, GRID_SIZE/4, 0, Math.PI * 2);
         ctx.fill();
 
         // Draw shooter
         ctx.fillStyle = '#006400';
         ctx.beginPath();
-        ctx.arc(x + GRID_SIZE * 0.7, y + GRID_SIZE/2, GRID_SIZE/6, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Draw leaves
-        ctx.fillStyle = '#32CD32';
-        ctx.beginPath();
-        ctx.ellipse(x + GRID_SIZE/2, y + GRID_SIZE * 0.7, 15, 8, 0, 0, Math.PI * 2);
+        ctx.arc(x + GRID_SIZE * 0.7, y + GRID_SIZE * 0.4, GRID_SIZE/6, 0, Math.PI * 2);
         ctx.fill();
     }
 
@@ -350,6 +571,13 @@
         ctx.moveTo(x + GRID_SIZE * 0.5, y + GRID_SIZE * 0.4);
         ctx.lineTo(x + GRID_SIZE * 0.65, y + GRID_SIZE * 0.6);
         ctx.stroke();
+
+        // Draw eyes
+        ctx.fillStyle = '#ff0000';
+        ctx.beginPath();
+        ctx.arc(x + GRID_SIZE * 0.35, y + GRID_SIZE * 0.2, 4, 0, Math.PI * 2);
+        ctx.arc(x + GRID_SIZE * 0.45, y + GRID_SIZE * 0.2, 4, 0, Math.PI * 2);
+        ctx.fill();
     }
 
     function drawHealthBar(x, y, health) {
@@ -367,34 +595,48 @@
         ctx.fillRect(xPos, yPos, width * (health / 100), height);
     }
 
-    // Add touch support for mobile devices
-    canvas.addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        const touch = e.touches[0];
-        const mouseEvent = new MouseEvent('click', {
-            clientX: touch.clientX,
-            clientY: touch.clientY
-        });
-        canvas.dispatchEvent(mouseEvent);
+    function updateSunCounter(newValue) {
+        const counter = document.getElementById('sunCounter');
+        counter.style.transition = 'all 0.3s ease';
+        counter.style.transform = 'scale(1.2)';
+        counter.textContent = newValue;
+        setTimeout(() => {
+            counter.style.transform = 'scale(1)';
+        }, 300);
+    }
+
+    function showNotification(message) {
+        const notification = document.createElement('div');
+        notification.className = 'notification';
+        notification.textContent = message;
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+            notification.style.opacity = '0';
+            notification.style.transform = 'translateX(100%)';
+            setTimeout(() => notification.remove(), 500);
+        }, 2500);
+    }
+
+    // Handle window resize
+    window.addEventListener('resize', () => {
+        // Update canvas size if needed
+        // This could be implemented if you want responsive canvas sizing
     });
 
-    // Add game controls info
-    const controls = document.getElementById('controls');
-    if (controls) {
-        if (gameState.isPlayerPlants) {
-            controls.innerHTML = `
-                    <p>Controls:</p>
-                    <p>1 - Select Sunflower (Cost: 50 sun)</p>
-                    <p>2 - Select Peashooter (Cost: 100 sun)</p>
-                    <p>Click on grid to place plant</p>
-                `;
-        } else {
-            controls.innerHTML = `
-                    <p>Controls:</p>
-                    <p>Click on the rightmost column to place zombies</p>
-                `;
-        }
-    }
+    // Handle window blur/focus
+    window.addEventListener('blur', () => {
+        // Pause game or show pause menu
+    });
+
+    window.addEventListener('focus', () => {
+        // Resume game
+    });
+
+    // Prevent context menu on right click
+    canvas.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+    });
 </script>
 </body>
 </html>
