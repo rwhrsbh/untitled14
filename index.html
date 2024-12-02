@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Plants vs Zombies Multiplayer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+
+        #gameBoard {
+            border: 2px solid black;
+            background: #90EE90;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .lobby {
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            background: white;
+            text-align: center;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            border: none;
+            border-radius: 4px;
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        input {
+            padding: 10px;
+            margin: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        #gameUI {
+            text-align: center;
+        }
+
+        .status {
+            margin: 10px;
+            padding: 10px;
+            background-color: white;
+            border-radius: 4px;
+            display: inline-block;
+        }
+
+        .controls {
+            margin: 10px;
+            padding: 10px;
+            background-color: white;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+<div id="lobby" class="lobby">
+    <h2>PvZ Multiplayer Lobby</h2>
+    <button id="createGame">Create New Game</button>
+    <div>
+        <input id="gameId" placeholder="Enter Game ID">
+        <button id="joinGame">Join Game</button>
+    </div>
+</div>
+
+<div id="gameUI" class="hidden">
+    <div class="status">
+        Sun: <span id="sunCounter">50</span>
+        Selected: <span id="selected">None</span>
+    </div>
+    <canvas id="gameBoard" width="800" height="600"></canvas>
+    <div class="controls" id="controls"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.1/socket.io.js"></script>
+<script>
+    // Game Constants
+    const GRID_SIZE = 80;
+    const ROWS = 5;
+    const COLS = 9;
+    const PLANT_TYPES = {
+        SUNFLOWER: { cost: 50, health: 100, name: 'Sunflower' },
+        PEASHOOTER: { cost: 100, health: 100, damage: 20, name: 'Peashooter' }
+    };
+    const ZOMBIE_TYPES = {
+        BASIC: { health: 100, damage: 10, speed: 0.5, name: 'Basic Zombie' }
+    };
+
+    // Game State
+    let gameState = {
+        plants: [],
+        zombies: [],
+        sun: 50,
+        selectedPlant: null,
+        isPlayerPlants: false,
+        gameId: null
+    };
+
+    // UI Elements
+    const lobbyDiv = document.getElementById('lobby');
+    const gameUI = document.getElementById('gameUI');
+    const sunCounter = document.getElementById('sunCounter');
+    const selectedDisplay = document.getElementById('selected');
+    let canvas, ctx;
+
+    // Connect to server
+    const socket = io('https://untitled13.onrender.com'); // Change this to your Render URL in production
+
+    // Game Creation and Joining
+    document.getElementById('createGame').addEventListener('click', () => {
+        socket.emit('createGame');
+    });
+
+    document.getElementById('joinGame').addEventListener('click', () => {
+        const gameId = document.getElementById('gameId').value;
+        if (gameId) {
+            socket.emit('joinGame', gameId);
+        }
+    });
+
+    socket.on('gameCreated', (data) => {
+        gameState.gameId = data.gameId;
+        gameState.isPlayerPlants = true;
+        document.getElementById('gameId').value = data.gameId;
+        alert(`Game created! Share this ID: ${data.gameId}`);
+    });
+
+    socket.on('gameJoined', (data) => {
+        gameState.gameId = data.gameId;
+        gameState.isPlayerPlants = false;
+        startGame();
+    });
+
+    socket.on('gameStart', () => {
+        startGame();
+    });
+
+    socket.on('gameUpdate', (newState) => {
+        gameState.plants = newState.plants;
+        gameState.zombies = newState.zombies;
+        gameState.sun = newState.sun;
+        sunCounter.textContent = gameState.sun;
+    });
+
+    socket.on('gameEnded', (data) => {
+        alert(`Game Over! ${data.winner} won!`);
+        location.reload();
+    });
+
+    socket.on('error', (data) => {
+        alert(data.message);
+    });
+
+    function startGame() {
+        lobbyDiv.classList.add('hidden');
+        gameUI.classList.remove('hidden');
+        canvas = document.getElementById('gameBoard');
+        ctx = canvas.getContext('2d');
+        setupGameListeners();
+        gameLoop();
+    }
+
+    function setupGameListeners() {
+        canvas.addEventListener('click', handleClick);
+
+        if (gameState.isPlayerPlants) {
+            document.addEventListener('keydown', (e) => {
+                if (e.key === '1') {
+                    gameState.selectedPlant = 'SUNFLOWER';
+                    selectedDisplay.textContent = 'Sunflower';
+                } else if (e.key === '2') {
+                    gameState.selectedPlant = 'PEASHOOTER';
+                    selectedDisplay.textContent = 'Peashooter';
+                }
+            });
+        }
+    }
+
+    function handleClick(e) {
+        const rect = canvas.getBoundingClientRect();
+        const x = Math.floor((e.clientX - rect.left) / GRID_SIZE);
+        const y = Math.floor((e.clientY - rect.top) / GRID_SIZE);
+
+        if (gameState.isPlayerPlants && gameState.selectedPlant) {
+            const plantType = PLANT_TYPES[gameState.selectedPlant];
+            if (gameState.sun >= plantType.cost) {
+                socket.emit('placePlant', {
+                    type: gameState.selectedPlant,
+                    x: x,
+                    y: y,
+                    gameId: gameState.gameId
+                });
+            }
+        } else if (!gameState.isPlayerPlants) {
+            if (x === COLS - 1) { // Can only place zombies in rightmost column
+                socket.emit('placeZombie', {
+                    type: 'BASIC',
+                    x: x,
+                    y: y,
+                    gameId: gameState.gameId
+                });
+            }
+        }
+    }
+
+    function gameLoop() {
+        requestAnimationFrame(gameLoop);
+        drawGame();
+    }
+
+    function drawGame() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawGrid();
+        drawPlants();
+        drawZombies();
+    }
+
+    function drawGrid() {
+        ctx.strokeStyle = '#666';
+        ctx.lineWidth = 1;
+
+        for (let i = 0; i <= COLS; i++) {
+            ctx.beginPath();
+            ctx.moveTo(i * GRID_SIZE, 0);
+            ctx.lineTo(i * GRID_SIZE, ROWS * GRID_SIZE);
+            ctx.stroke();
+        }
+
+        for (let i = 0; i <= ROWS; i++) {
+            ctx.beginPath();
+            ctx.moveTo(0, i * GRID_SIZE);
+            ctx.lineTo(COLS * GRID_SIZE, i * GRID_SIZE);
+            ctx.stroke();
+        }
+    }
+
+    function drawPlants() {
+        gameState.plants.forEach(plant => {
+            if (plant.type === 'SUNFLOWER') {
+                drawSunflower(plant.x * GRID_SIZE, plant.y * GRID_SIZE, plant.health);
+            } else if (plant.type === 'PEASHOOTER') {
+                drawPeashooter(plant.x * GRID_SIZE, plant.y * GRID_SIZE, plant.health);
+            }
+        });
+    }
+
+    function drawZombies() {
+        gameState.zombies.forEach(zombie => {
+            drawZombie(zombie.x * GRID_SIZE, zombie.y * GRID_SIZE, zombie.health);
+        });
+    }
+
+    function drawSunflower(x, y, health) {
+        // Draw health bar
+        drawHealthBar(x, y, health);
+
+        // Draw stem
+        ctx.strokeStyle = '#228B22';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(x + GRID_SIZE/2, y + GRID_SIZE * 0.7);
+        ctx.lineTo(x + GRID_SIZE/2, y + GRID_SIZE * 0.4);
+        ctx.stroke();
+
+        // Draw petals
+        ctx.fillStyle = '#FFD700';
+        for (let i = 0; i < 8; i++) {
+            ctx.beginPath();
+            const angle = (i * Math.PI / 4);
+            const petalX = x + GRID_SIZE/2 + Math.cos(angle) * 15;
+            const petalY = y + GRID_SIZE * 0.4 + Math.sin(angle) * 15;
+            ctx.arc(petalX, petalY, 8, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Draw center
+        ctx.fillStyle = '#8B4513';
+        ctx.beginPath();
+        ctx.arc(x + GRID_SIZE/2, y + GRID_SIZE * 0.4, 10, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    function drawPeashooter(x, y, health) {
+        // Draw health bar
+        drawHealthBar(x, y, health);
+
+        // Draw head
+        ctx.fillStyle = '#228B22';
+        ctx.beginPath();
+        ctx.arc(x + GRID_SIZE/2, y + GRID_SIZE/2, GRID_SIZE/3, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Draw shooter
+        ctx.fillStyle = '#006400';
+        ctx.beginPath();
+        ctx.arc(x + GRID_SIZE * 0.7, y + GRID_SIZE/2, GRID_SIZE/6, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Draw leaves
+        ctx.fillStyle = '#32CD32';
+        ctx.beginPath();
+        ctx.ellipse(x + GRID_SIZE/2, y + GRID_SIZE * 0.7, 15, 8, 0, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    function drawZombie(x, y, health) {
+        // Draw health bar
+        drawHealthBar(x, y, health);
+
+        // Draw body
+        ctx.fillStyle = '#666';
+        ctx.fillRect(x + GRID_SIZE * 0.2, y + GRID_SIZE * 0.3, GRID_SIZE * 0.4, GRID_SIZE * 0.5);
+
+        // Draw head
+        ctx.fillStyle = '#888';
+        ctx.beginPath();
+        ctx.arc(x + GRID_SIZE * 0.4, y + GRID_SIZE * 0.25, GRID_SIZE * 0.2, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Draw arms
+        ctx.strokeStyle = '#666';
+        ctx.lineWidth = 8;
+        ctx.beginPath();
+        ctx.moveTo(x + GRID_SIZE * 0.3, y + GRID_SIZE * 0.4);
+        ctx.lineTo(x + GRID_SIZE * 0.15, y + GRID_SIZE * 0.6);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(x + GRID_SIZE * 0.5, y + GRID_SIZE * 0.4);
+        ctx.lineTo(x + GRID_SIZE * 0.65, y + GRID_SIZE * 0.6);
+        ctx.stroke();
+    }
+
+    function drawHealthBar(x, y, health) {
+        const width = GRID_SIZE * 0.8;
+        const height = 6;
+        const xPos = x + (GRID_SIZE - width) / 2;
+        const yPos = y + GRID_SIZE * 0.1;
+
+        // Draw background
+        ctx.fillStyle = '#ff0000';
+        ctx.fillRect(xPos, yPos, width, height);
+
+        // Draw health
+        ctx.fillStyle = '#00ff00';
+        ctx.fillRect(xPos, yPos, width * (health / 100), height);
+    }
+
+    // Add touch support for mobile devices
+    canvas.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        const touch = e.touches[0];
+        const mouseEvent = new MouseEvent('click', {
+            clientX: touch.clientX,
+            clientY: touch.clientY
+        });
+        canvas.dispatchEvent(mouseEvent);
+    });
+
+    // Add game controls info
+    const controls = document.getElementById('controls');
+    if (controls) {
+        if (gameState.isPlayerPlants) {
+            controls.innerHTML = `
+                    <p>Controls:</p>
+                    <p>1 - Select Sunflower (Cost: 50 sun)</p>
+                    <p>2 - Select Peashooter (Cost: 100 sun)</p>
+                    <p>Click on grid to place plant</p>
+                `;
+        } else {
+            controls.innerHTML = `
+                    <p>Controls:</p>
+                    <p>Click on the rightmost column to place zombies</p>
+                `;
+        }
+    }
+</script>
+</body>
+</html>
