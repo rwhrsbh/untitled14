@@ -369,48 +369,56 @@
     }
 
     function handleClick(e) {
-        const rect = canvas.getBoundingClientRect();
-        const x = Math.floor((e.clientX - rect.left) / GRID_SIZE);
-        const y = Math.floor((e.clientY - rect.top) / GRID_SIZE);
+    const rect = canvas.getBoundingClientRect();
+    const x = Math.floor((e.clientX - rect.left) / GRID_SIZE);
+    const y = Math.floor((e.clientY - rect.top) / GRID_SIZE);
 
-        if (x < 0 || x >= COLS || y < 0 || y >= ROWS) return;
+    if (y < 0 || y >= ROWS) return;
 
-        if (gameState.isPlayerPlants) {
-            if (!gameState.selectedPlant) {
-                showNotification('Select a plant first!');
-                return;
-            }
-
-            if (!isPlantPlaceable(x, y)) {
-                showNotification('Cannot place plant here!');
-                return;
-            }
-
-            if (gameState.sun < PLANT_TYPES[gameState.selectedPlant].cost) {
-                showNotification('Not enough sun!');
-                return;
-            }
-
-            socket.emit('placePlant', {
-                type: gameState.selectedPlant,
-                x: x,
-                y: y,
-                gameId: gameState.gameId
-            });
-        } else {
-            if (x !== COLS - 1) {
-                showNotification('Zombies can only be placed in the rightmost column!');
-                return;
-            }
-
-            socket.emit('placeZombie', {
-                type: 'BASIC',
-                x: x,
-                y: y,
-                gameId: gameState.gameId
-            });
+    if (gameState.isPlayerPlants) {
+        if (!gameState.selectedPlant) {
+            showNotification('Select a plant first!');
+            return;
         }
+
+        if (!isPlantPlaceable(x, y)) {
+            showNotification('Cannot place plant here!');
+            return;
+        }
+
+        if (gameState.sun < PLANT_TYPES[gameState.selectedPlant].cost) {
+            showNotification('Not enough sun!');
+            return;
+        }
+
+        socket.emit('placePlant', {
+            type: gameState.selectedPlant,
+            x: x,
+            y: y,
+            gameId: gameState.gameId
+        });
+    } else {
+        // Зомби можно ставить только в крайний правый столбец
+        socket.emit('placeZombie', {
+            type: 'BASIC',
+            x: COLS - 1,
+            y: y,
+            gameId: gameState.gameId
+        });
     }
+}
+
+// Обновляем отображение солнца
+socket.on('gameUpdate', (newState) => {
+    gameState.plants = newState.plants;
+    gameState.zombies = newState.zombies;
+    
+    // Добавляем проверку на изменение количества солнца
+    if (gameState.sun !== newState.sun) {
+        updateSunCounter(newState.sun);
+        gameState.sun = newState.sun;
+    }
+});
 
     function isPlantPlaceable(x, y) {
         return !gameState.plants.some(plant =>
